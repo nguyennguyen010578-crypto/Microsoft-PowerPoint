@@ -54,7 +54,7 @@
             box-shadow: 0 0 6px rgba(233, 163, 50, 0.6);
         }
 
-        /* Hộp văn bản chuẩn desktop */
+        /* Hộp văn bản desktop */
         .ppt-box {
             position: absolute;
             border: 1px dashed #94a3b8;
@@ -67,7 +67,7 @@
             border: 1.5px solid #c43e1c;
         }
 
-        /* Thanh tay cầm chuyên để kéo di chuyển */
+        /* Thanh tay cầm kéo di chuyển */
         .drag-handle {
             height: 18px;
             background: #c43e1c;
@@ -116,8 +116,8 @@
     <!-- TOP RED BANNER (TITLE BAR) -->
     <header class="bg-office-topred text-white h-8 flex items-center justify-between px-2 text-xs z-30 shadow-sm">
         <div class="flex items-center gap-2">
-            <div class="w-5 h-5 bg-office-darkred rounded flex items-center justify-center font-bold text-white text-xs border border-white/20">P</div>
-            <button onclick="savePresentation()" class="p-1 hover:bg-office-darkred rounded" title="Lưu (Ctrl+S)"><i class="fas fa-floppy-disk"></i></button>
+            <div class="w-5 h-5 bg-office-darkred rounded flex items-center justify-center font-bold text-white text-xs border border-white/25">P</div>
+            <button onclick="saveToFileComputer()" class="px-2 py-0.5 bg-office-darkred hover:bg-red-800 rounded font-bold text-white flex items-center gap-1 border border-white/20" title="Tải về tệp máy tính"><i class="fas fa-download"></i> Lưu về máy</button>
             <button onclick="startSlideShow()" class="p-1 hover:bg-office-darkred rounded" title="Trình chiếu (F5)"><i class="fas fa-play"></i></button>
             <button onclick="resetDataForce()" class="px-2 py-0.5 bg-red-700 hover:bg-red-800 rounded font-bold text-white ml-2 flex items-center gap-1" title="Khôi phục cài đặt gốc"><i class="fas fa-rotate"></i> Reset</button>
         </div>
@@ -155,22 +155,38 @@
         <button onclick="switchTab('slideshow')" id="tab-slideshow" class="ribbon-btn px-3 py-1.5 hover:bg-slate-200">Trình chiếu</button>
     </nav>
 
-    <!-- RIBBON TOOLBAR PANEL -->
-    <div class="bg-office-ribbon border-b border-office-border p-1.5 min-h-[72px] flex items-center gap-3 px-3 shadow-sm z-20 overflow-x-auto">
+    <!-- RIBBON TOOLBAR PANEL (MÔ PHỎNG CHUẨN GIAO DIỆN POWERPOINT 2010-2016) -->
+    <div class="bg-office-ribbon border-b border-office-border p-1.5 min-h-[78px] flex items-center gap-3 px-3 shadow-sm z-20 overflow-x-auto">
         
         <!-- HOME TAB -->
-        <div id="panel-home" class="tab-panel flex items-center gap-3">
-            <div class="flex items-center gap-1 border-r pr-3 border-slate-300">
-                <button onclick="addNewSlide()" class="flex flex-col items-center hover:bg-slate-200 p-1.5 rounded">
-                    <i class="fas fa-square-plus text-office-red text-lg"></i>
-                    <span class="text-[10px] mt-0.5">Slide mới</span>
-                </button>
-                <button onclick="duplicateSlide()" class="p-1 hover:bg-slate-200 rounded" title="Nhân bản Slide"><i class="fas fa-copy"></i></button>
-                <button onclick="deleteCurrentSlide()" class="p-1 hover:bg-red-100 text-red-600 rounded" title="Xóa Slide"><i class="fas fa-trash"></i></button>
+        <div id="panel-home" class="tab-panel flex items-center gap-2">
+            <!-- Clipboard Group -->
+            <div class="flex flex-col items-center border-r pr-2 border-slate-300 text-[11px] text-slate-600">
+                <div class="flex items-center gap-1 mb-1">
+                    <button class="p-1 hover:bg-slate-200 rounded" title="Paste"><i class="fas fa-paste text-blue-600"></i></button>
+                    <div class="flex flex-col">
+                        <button class="hover:bg-slate-200 px-1 text-left">Cut</button>
+                        <button class="hover:bg-slate-200 px-1 text-left">Copy</button>
+                    </div>
+                </div>
+                <span class="text-[9px] text-slate-500 font-medium">Clipboard</span>
             </div>
 
-            <!-- FONT & BOX COLOR CONTROLS -->
-            <div class="flex flex-col gap-1 border-r pr-3 border-slate-300">
+            <!-- Slides Group -->
+            <div class="flex items-center gap-1 border-r pr-2 border-slate-300">
+                <button onclick="addNewSlide()" class="flex flex-col items-center hover:bg-slate-200 p-1.5 rounded">
+                    <i class="fas fa-square-plus text-office-red text-lg"></i>
+                    <span class="text-[9px] mt-0.5">New Slide</span>
+                </button>
+                <div class="flex flex-col gap-0.5">
+                    <button onclick="duplicateSlide()" class="hover:bg-slate-200 px-1 text-left text-[11px]"><i class="fas fa-copy"></i> Duplicate</button>
+                    <button onclick="deleteCurrentSlide()" class="hover:bg-red-100 text-red-600 px-1 text-left text-[11px]"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+                <span class="text-[9px] text-slate-500 font-medium self-end ml-1">Slides</span>
+            </div>
+
+            <!-- Font & Box Background Group -->
+            <div class="flex flex-col gap-1 border-r pr-2 border-slate-300">
                 <div class="flex items-center gap-1">
                     <select onchange="execFormat('fontName', this.value)" class="text-xs border rounded px-1 py-0.5 bg-white">
                         <option value="Arial">Arial</option>
@@ -187,33 +203,46 @@
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-0.5">
                         <button onclick="execFormat('bold')" class="px-1.5 py-0.5 hover:bg-slate-200 rounded font-bold">B</button>
                         <button onclick="execFormat('italic')" class="px-1.5 py-0.5 hover:bg-slate-200 rounded italic">I</button>
                         <button onclick="execFormat('underline')" class="px-1.5 py-0.5 hover:bg-slate-200 rounded underline">U</button>
-                        <input type="color" onchange="execFormat('foreColor', this.value)" class="w-5 h-5 border-0 p-0 cursor-pointer rounded" title="Màu chữ">
+                        <input type="color" onchange="execFormat('foreColor', this.value)" class="w-4 h-4 border-0 p-0 cursor-pointer rounded" title="Màu chữ">
                     </div>
                     <div class="border-l pl-2 flex items-center gap-1">
                         <span class="text-[10px] text-slate-500 font-semibold">Màu nền hộp:</span>
-                        <input type="color" id="boxBgColorPicker" value="#ffffff" onchange="changeSelectedBoxBg(this.value)" class="w-5 h-5 border-0 p-0 cursor-pointer rounded" title="Chọn màu nền hộp văn bản">
+                        <input type="color" id="boxBgColorPicker" value="#ffffff" onchange="changeSelectedBoxBg(this.value)" class="w-4 h-4 border-0 p-0 cursor-pointer rounded" title="Chọn màu nền hộp văn bản">
                     </div>
                 </div>
+                <span class="text-[9px] text-slate-500 font-medium">Font</span>
             </div>
 
-            <!-- ALIGNMENT -->
-            <div class="flex items-center gap-1 border-r pr-3 border-slate-300">
-                <button onclick="execFormat('justifyLeft')" class="p-1 hover:bg-slate-200 rounded"><i class="fas fa-align-left"></i></button>
-                <button onclick="execFormat('justifyCenter')" class="p-1 hover:bg-slate-200 rounded"><i class="fas fa-align-center"></i></button>
-                <button onclick="execFormat('justifyRight')" class="p-1 hover:bg-slate-200 rounded"><i class="fas fa-align-right"></i></button>
+            <!-- Alignment Group -->
+            <div class="flex flex-col justify-between border-r pr-2 border-slate-300">
+                <div class="flex items-center gap-1">
+                    <button onclick="execFormat('justifyLeft')" class="p-1 hover:bg-slate-200 rounded" title="Căn trái"><i class="fas fa-align-left"></i></button>
+                    <button onclick="execFormat('justifyCenter')" class="p-1 hover:bg-slate-200 rounded" title="Căn giữa"><i class="fas fa-align-center"></i></button>
+                    <button onclick="execFormat('justifyRight')" class="p-1 hover:bg-slate-200 rounded" title="Căn phải"><i class="fas fa-align-right"></i></button>
+                </div>
+                <span class="text-[9px] text-slate-500 font-medium">Paragraph</span>
+            </div>
+
+            <!-- Drawing Shapes Group -->
+            <div class="flex items-center gap-1">
+                <button onclick="addShape('rect')" class="p-1 hover:bg-slate-200 border rounded bg-white flex items-center gap-1" title="Hình chữ nhật"><i class="fas fa-vector-square text-orange-600"></i> Hình chữ nhật</button>
+                <button onclick="addShape('circle')" class="p-1 hover:bg-slate-200 border rounded bg-white flex items-center gap-1" title="Hình tròn"><i class="fas fa-circle text-blue-600"></i> Hình tròn</button>
+                <span class="text-[9px] text-slate-500 font-medium self-end ml-1">Drawing</span>
             </div>
         </div>
 
         <!-- INSERT TAB -->
         <div id="panel-insert" class="tab-panel hidden flex items-center gap-3">
             <button onclick="addTextBox()" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5"><i class="fas fa-font text-blue-600"></i> Hộp văn bản</button>
-            <button onclick="addImage()" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5"><i class="fas fa-image text-green-600"></i> Hình ảnh</button>
-            <button onclick="addShape('rect')" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5"><i class="fas fa-vector-square text-orange-600"></i> Hình chữ nhật</button>
+            <button onclick="triggerImageUpload()" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5 font-semibold text-green-700"><i class="fas fa-file-image text-green-600 text-sm"></i> Chèn ảnh từ tệp...</button>
         </div>
+
+        <!-- Hidden File Input cho Chèn Hình Ảnh -->
+        <input type="file" id="imageFileInput" accept="image/*" class="hidden" onchange="handleImageFromFile(event)">
 
         <!-- DESIGN TAB -->
         <div id="panel-design" class="tab-panel hidden flex items-center gap-3">
@@ -274,15 +303,19 @@
                     <div class="text-[11px] text-red-200">Microsoft PowerPoint 365</div>
                 </div>
             </div>
-            <nav class="flex-1 space-y-1.5 text-sm">
+            <nav class="flex-1 space-y-2 text-sm">
                 <button onclick="closeFileMenuModal(); addNewSlide();" class="w-full text-left px-3 py-2.5 rounded hover:bg-office-darkred flex items-center gap-3 font-medium"><i class="fas fa-file-circle-plus"></i> Tạo slide mới</button>
-                <button onclick="closeFileMenuModal(); savePresentation(); alert('Đã lưu bài thuyết trình vào trình duyệt!');" class="w-full text-left px-3 py-2.5 rounded hover:bg-office-darkred flex items-center gap-3 font-medium"><i class="fas fa-floppy-disk"></i> Lưu bài thuyết trình</button>
+                <button onclick="closeFileMenuModal(); saveToFileComputer();" class="w-full text-left px-3 py-2.5 rounded bg-amber-600 hover:bg-amber-700 flex items-center gap-3 font-bold text-white shadow"><i class="fas fa-download"></i> Tải bài về máy tính (.ppt)</button>
+                <button onclick="closeFileMenuModal(); triggerOpenFileComputer();" class="w-full text-left px-3 py-2.5 rounded bg-blue-700 hover:bg-blue-800 flex items-center gap-3 font-bold text-white shadow"><i class="fas fa-folder-open"></i> Mở tệp từ máy tính</button>
                 <button onclick="closeFileMenuModal(); resetDataForce();" class="w-full text-left px-3 py-2.5 rounded bg-red-900/60 hover:bg-red-900 flex items-center gap-3 font-medium text-red-100 mt-6"><i class="fas fa-rotate"></i> Khôi phục cài đặt gốc (Reset)</button>
             </nav>
             <button onclick="closeFileMenuModal()" class="mt-auto py-2 border border-white/30 rounded text-xs hover:bg-white/10 font-semibold">Quay lại soạn thảo</button>
         </div>
         <div class="flex-1" onclick="closeFileMenuModal()"></div>
     </div>
+
+    <!-- Hidden Input File để mở tệp ppt từ máy tính -->
+    <input type="file" id="fileComputerInput" accept=".ppt,.json" class="hidden" onchange="loadFromFileComputer(event)">
 
     <!-- AUTHENTICATION MODAL -->
     <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
@@ -331,8 +364,8 @@
                     bgColor: '#ffffff',
                     transition: 'flip',
                     elements: [
-                        { id: 'title-1', left: 130, top: 160, width: 600, bgColor: 'transparent', content: '<div class="font-semibold text-4xl text-center text-black" contenteditable="true">Nhấp để thêm tiêu đề</div>' },
-                        { id: 'subtitle-1', left: 180, top: 270, width: 500, bgColor: 'transparent', content: '<div class="font-normal text-xl text-center text-gray-500" contenteditable="true">Nhấp để thêm phụ đề bài thuyết trình</div>' }
+                        { id: 'title-1', left: 130, top: 100, width: 600, bgColor: 'transparent', content: '<div class="font-semibold text-4xl text-center text-black">Nhấp để thêm tiêu đề</div>' },
+                        { id: 'subtitle-1', left: 180, top: 220, width: 500, bgColor: 'transparent', content: '<div class="font-normal text-xl text-center text-gray-500">Nhấp để thêm nội dung</div>' }
                     ]
                 }
             ];
@@ -398,6 +431,75 @@
         }
 
         window.onload = initApp;
+
+        // CHÈN HÌNH ẢNH TỪ TỆP MÁY TÍNH
+        function triggerImageUpload() {
+            document.getElementById('imageFileInput').click();
+        }
+
+        function handleImageFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageUrl = e.target.result;
+                slides[currentSlideIndex].elements.push({
+                    id: 'el-' + Date.now(),
+                    left: 200,
+                    top: 100,
+                    bgColor: 'transparent',
+                    content: `<img src="${imageUrl}" class="max-w-[450px] max-h-[300px] rounded shadow border pointer-events-none object-contain">`
+                });
+                renderCanvas();
+                savePresentation();
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // SAVE & LOAD TO/FROM COMPUTER FILE
+        function saveToFileComputer() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(slides, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const fileName = (document.getElementById('docTitleDisplay').innerText || 'Presentation1').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.ppt';
+            
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            alert(`Đã tải tệp bài thuyết trình "${fileName}" về máy tính thành công!`);
+        }
+
+        function triggerOpenFileComputer() {
+            document.getElementById('fileComputerInput').click();
+        }
+
+        function loadFromFileComputer(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loadedSlides = JSON.parse(e.target.result);
+                    if (Array.isArray(loadedSlides) && loadedSlides.length > 0) {
+                        slides = loadedSlides;
+                        currentSlideIndex = 0;
+                        renderThumbnails();
+                        renderCanvas();
+                        savePresentation();
+                        alert('Đã mở tệp từ máy tính thành công!');
+                    } else {
+                        alert('Định dạng tệp không hợp lệ!');
+                    }
+                } catch (err) {
+                    alert('Lỗi khi đọc tệp từ máy tính!');
+                }
+            };
+            reader.readAsText(file);
+        }
 
         // FILE MENU MODAL
         function openFileMenuModal() { document.getElementById('fileMenuModal').classList.remove('hidden'); }
@@ -542,7 +644,6 @@
                     }
                 };
 
-                // Thanh kéo thả chuyên dụng phía trên mỗi hộp văn bản
                 const handle = document.createElement('div');
                 handle.className = 'drag-handle';
                 handle.innerHTML = `<span><i class="fas fa-arrows-up-down-left-right"></i> Di chuyển</span><span>✕</span>`;
@@ -556,7 +657,6 @@
                     initialTop = item.top;
                 };
 
-                // Vùng nội dung gõ chữ độc lập (có contenteditable)
                 const content = document.createElement('div');
                 content.className = 'box-content';
                 content.innerHTML = item.content;
@@ -631,21 +731,6 @@
             });
             renderCanvas();
             savePresentation();
-        }
-
-        function addImage() {
-            const url = prompt('Nhập đường dẫn URL hình ảnh:', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=500');
-            if (url) {
-                slides[currentSlideIndex].elements.push({
-                    id: 'el-' + Date.now(),
-                    left: 230,
-                    top: 150,
-                    bgColor: 'transparent',
-                    content: `<img src="${url}" class="w-72 rounded shadow border pointer-events-none">`
-                });
-                renderCanvas();
-                savePresentation();
-            }
         }
 
         function addShape(type) {
