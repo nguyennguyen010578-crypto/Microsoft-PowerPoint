@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentation1 - Microsoft PowerPoint 365</title>
+    <!-- Favicon chữ P chuẩn PowerPoint -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2215%22 fill=%22%23c43e1c%22/><text x=%2250%22 y=%2270%22 font-size=%2265%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22Arial, sans-serif%22>P</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        office: {
+                            red: '#c43e1c',
+                            darkred: '#b7371a',
+                            topred: '#d03b1e',
+                            bg: '#adbdcc',
+                            ribbon: '#f3f3f3',
+                            border: '#d4d4d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .slide-canvas {
+            width: 860px;
+            height: 484px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .slide-thumb {
+            width: 130px;
+            height: 73px;
+            background: white;
+            border: 1px solid #c8c8c8;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease;
+        }
+        .slide-thumb.active {
+            border: 2px solid #e9a332;
+            box-shadow: 0 0 6px rgba(233, 163, 50, 0.6);
+        }
+
+        /* Hộp văn bản chuẩn desktop */
+        .ppt-box {
+            position: absolute;
+            border: 1px dashed #94a3b8;
+            box-sizing: border-box;
+            background: transparent;
+            min-width: 180px;
+            border-radius: 3px;
+        }
+        .ppt-box:hover, .ppt-box.selected {
+            border: 1.5px solid #c43e1c;
+        }
+
+        /* Thanh tay cầm chuyên để kéo di chuyển */
+        .drag-handle {
+            height: 18px;
+            background: #c43e1c;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            color: white;
+            font-size: 9px;
+            opacity: 0.2;
+            transition: opacity 0.2s;
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
+        }
+        .ppt-box:hover .drag-handle, .ppt-box.selected .drag-handle {
+            opacity: 1;
+        }
+
+        /* Vùng nội dung gõ chữ độc lập */
+        .box-content {
+            padding: 6px;
+            width: 100%;
+            height: calc(100% - 18px);
+            outline: none;
+            cursor: text;
+        }
+
+        /* TRANSITIONS & FLIP ANIMATION */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pushIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes flip3DIn {
+            from { transform: perspective(1000px) rotateY(-90deg); opacity: 0; }
+            to { transform: perspective(1000px) rotateY(0deg); opacity: 1; }
+        }
+
+        .anim-fade { animation: fadeIn 0.4s ease-in-out; }
+        .anim-push { animation: pushIn 0.4s cubic-bezier(0.1, 0.9, 0.2, 1); }
+        .anim-zoom { animation: zoomIn 0.35s ease-out; }
+        .anim-flip { animation: flip3DIn 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+    </style>
+</head>
+<body class="bg-slate-200 text-slate-800 h-screen flex flex-col overflow-hidden font-sans select-none text-xs">
+
+    <!-- TOP RED BANNER (TITLE BAR) -->
+    <header class="bg-office-topred text-white h-8 flex items-center justify-between px-2 text-xs z-30 shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-5 h-5 bg-office-darkred rounded flex items-center justify-center font-bold text-white text-xs border border-white/20">P</div>
+            <button onclick="savePresentation()" class="p-1 hover:bg-office-darkred rounded" title="Lưu (Ctrl+S)"><i class="fas fa-floppy-disk"></i></button>
+            <button onclick="startSlideShow()" class="p-1 hover:bg-office-darkred rounded" title="Trình chiếu (F5)"><i class="fas fa-play"></i></button>
+            <button onclick="resetDataForce()" class="px-2 py-0.5 bg-red-700 hover:bg-red-800 rounded font-bold text-white ml-2 flex items-center gap-1" title="Khôi phục cài đặt gốc"><i class="fas fa-rotate"></i> Reset</button>
+        </div>
+
+        <div class="font-medium text-xs flex items-center gap-2">
+            <span id="docTitleDisplay" onclick="renamePresentation()" class="cursor-pointer hover:underline">Presentation1 - Microsoft PowerPoint</span>
+        </div>
+
+        <!-- AUTH BUTTONS & ACCOUNT PROFILE -->
+        <div class="flex items-center gap-2">
+            <div id="guestAuthGroup" class="flex items-center gap-1">
+                <button onclick="openAuthModal('login')" class="px-2 py-0.5 hover:bg-office-darkred rounded flex items-center gap-1 border border-white/20">
+                    <i class="fas fa-right-to-bracket"></i> Đăng nhập
+                </button>
+                <button onclick="openAuthModal('register')" class="px-2 py-0.5 bg-white text-office-red font-bold hover:bg-slate-100 rounded flex items-center gap-1 shadow-sm">
+                    <i class="fas fa-user-plus"></i> Đăng ký
+                </button>
+            </div>
+            <div id="userProfileGroup" class="hidden flex items-center gap-2">
+                <span id="userNameText" class="font-bold text-yellow-200"></span>
+                <button onclick="handleLogout()" class="px-2 py-0.5 hover:bg-office-darkred rounded border border-white/20 text-white" title="Đăng xuất">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- RIBBON NAVIGATION TABS -->
+    <nav class="bg-office-ribbon border-b border-office-border flex items-center px-2 text-xs z-20">
+        <button onclick="openFileMenuModal()" class="px-3 py-1.5 bg-office-red text-white font-bold hover:bg-office-darkorange flex items-center gap-1.5"><i class="fas fa-file"></i> Tệp</button>
+        <button onclick="switchTab('home')" id="tab-home" class="ribbon-btn px-3 py-1.5 font-semibold bg-white border-t-2 border-office-red">Trang chủ</button>
+        <button onclick="switchTab('insert')" id="tab-insert" class="ribbon-btn px-3 py-1.5 hover:bg-slate-200">Chèn</button>
+        <button onclick="switchTab('design')" id="tab-design" class="ribbon-btn px-3 py-1.5 hover:bg-slate-200">Thiết kế</button>
+        <button onclick="switchTab('transitions')" id="tab-transitions" class="ribbon-btn px-3 py-1.5 hover:bg-slate-200">Hiệu ứng chuyển trang</button>
+        <button onclick="switchTab('slideshow')" id="tab-slideshow" class="ribbon-btn px-3 py-1.5 hover:bg-slate-200">Trình chiếu</button>
+    </nav>
+
+    <!-- RIBBON TOOLBAR PANEL -->
+    <div class="bg-office-ribbon border-b border-office-border p-1.5 min-h-[72px] flex items-center gap-3 px-3 shadow-sm z-20 overflow-x-auto">
+        
+        <!-- HOME TAB -->
+        <div id="panel-home" class="tab-panel flex items-center gap-3">
+            <div class="flex items-center gap-1 border-r pr-3 border-slate-300">
+                <button onclick="addNewSlide()" class="flex flex-col items-center hover:bg-slate-200 p-1.5 rounded">
+                    <i class="fas fa-square-plus text-office-red text-lg"></i>
+                    <span class="text-[10px] mt-0.5">Slide mới</span>
+                </button>
+                <button onclick="duplicateSlide()" class="p-1 hover:bg-slate-200 rounded" title="Nhân bản Slide"><i class="fas fa-copy"></i></button>
+                <button onclick="deleteCurrentSlide()" class="p-1 hover:bg-red-100 text-red-600 rounded" title="Xóa Slide"><i class="fas fa-trash"></i></button>
+            </div>
+
+            <!-- FONT & BOX COLOR CONTROLS -->
+            <div class="flex flex-col gap-1 border-r pr-3 border-slate-300">
+                <div class="flex items-center gap-1">
+                    <select onchange="execFormat('fontName', this.value)" class="text-xs border rounded px-1 py-0.5 bg-white">
+                        <option value="Arial">Arial</option>
+                        <option value="Calibri" selected>Calibri</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Segoe UI">Segoe UI</option>
+                    </select>
+                    <select onchange="execFormat('fontSize', this.value)" class="text-xs border rounded px-1 py-0.5 bg-white">
+                        <option value="3">12 pt</option>
+                        <option value="4">14 pt</option>
+                        <option value="5">18 pt</option>
+                        <option value="6">24 pt</option>
+                        <option value="7" selected>36 pt</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1">
+                        <button onclick="execFormat('bold')" class="px-1.5 py-0.5 hover:bg-slate-200 rounded font-bold">B</button>
+                        <button onclick="execFormat('italic')" class="px-1.5 py-0.5 hover:bg-slate-200 rounded italic">I</button>
+                        <button onclick="execFormat('underline')" class="px-1.5 py-0.5 hover:bg-slate-200 rounded underline">U</button>
+                        <input type="color" onchange="execFormat('foreColor', this.value)" class="w-5 h-5 border-0 p-0 cursor-pointer rounded" title="Màu chữ">
+                    </div>
+                    <div class="border-l pl-2 flex items-center gap-1">
+                        <span class="text-[10px] text-slate-500 font-semibold">Màu nền hộp:</span>
+                        <input type="color" id="boxBgColorPicker" value="#ffffff" onchange="changeSelectedBoxBg(this.value)" class="w-5 h-5 border-0 p-0 cursor-pointer rounded" title="Chọn màu nền hộp văn bản">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALIGNMENT -->
+            <div class="flex items-center gap-1 border-r pr-3 border-slate-300">
+                <button onclick="execFormat('justifyLeft')" class="p-1 hover:bg-slate-200 rounded"><i class="fas fa-align-left"></i></button>
+                <button onclick="execFormat('justifyCenter')" class="p-1 hover:bg-slate-200 rounded"><i class="fas fa-align-center"></i></button>
+                <button onclick="execFormat('justifyRight')" class="p-1 hover:bg-slate-200 rounded"><i class="fas fa-align-right"></i></button>
+            </div>
+        </div>
+
+        <!-- INSERT TAB -->
+        <div id="panel-insert" class="tab-panel hidden flex items-center gap-3">
+            <button onclick="addTextBox()" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5"><i class="fas fa-font text-blue-600"></i> Hộp văn bản</button>
+            <button onclick="addImage()" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5"><i class="fas fa-image text-green-600"></i> Hình ảnh</button>
+            <button onclick="addShape('rect')" class="px-2.5 py-1.5 border bg-white rounded hover:bg-slate-100 flex items-center gap-1.5"><i class="fas fa-vector-square text-orange-600"></i> Hình chữ nhật</button>
+        </div>
+
+        <!-- DESIGN TAB -->
+        <div id="panel-design" class="tab-panel hidden flex items-center gap-3">
+            <span class="font-semibold text-xs">Mẫu Theme Slide:</span>
+            <button onclick="applyTheme('white')" class="w-8 h-6 border rounded bg-white shadow-sm" title="Trắng"></button>
+            <button onclick="applyTheme('dark')" class="w-8 h-6 border rounded bg-slate-900 shadow-sm" title="Tối Đen"></button>
+            <button onclick="applyTheme('blue')" class="w-8 h-6 border rounded bg-blue-900 shadow-sm" title="Xanh Doanh Nghiệp"></button>
+        </div>
+
+        <!-- TRANSITIONS TAB -->
+        <div id="panel-transitions" class="tab-panel hidden flex items-center gap-2">
+            <span class="font-semibold text-xs">Hiệu ứng chuyển slide:</span>
+            <button onclick="setTransition('none')" class="px-2.5 py-1 border bg-white rounded hover:bg-slate-100">Không có</button>
+            <button onclick="setTransition('fade')" class="px-2.5 py-1 border bg-white rounded hover:bg-slate-100"><i class="fas fa-feather text-amber-500"></i> Mờ dần (Fade)</button>
+            <button onclick="setTransition('push')" class="px-2.5 py-1 border bg-white rounded hover:bg-slate-100"><i class="fas fa-arrow-up text-blue-500"></i> Đẩy (Push)</button>
+            <button onclick="setTransition('zoom')" class="px-2.5 py-1 border bg-white rounded hover:bg-slate-100"><i class="fas fa-expand text-green-500"></i> Thu phóng (Zoom)</button>
+            <button onclick="setTransition('flip')" class="px-2.5 py-1 border bg-white rounded hover:bg-slate-100 font-bold text-purple-600"><i class="fas fa-rotate text-purple-600"></i> Lật 3D (Flip)</button>
+        </div>
+
+        <!-- SLIDESHOW TAB -->
+        <div id="panel-slideshow" class="tab-panel hidden flex items-center gap-3">
+            <button onclick="startSlideShow()" class="px-3 py-1.5 bg-office-red text-white rounded font-bold flex items-center gap-1.5 hover:bg-office-darkorange"><i class="fas fa-play"></i> Bắt đầu Trình chiếu (F5)</button>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- LEFT SLIDE THUMBNAILS -->
+        <aside class="w-48 bg-[#d6dcce] border-r border-slate-300 p-2 overflow-y-auto flex flex-col items-center gap-3">
+            <div id="slideThumbnailList" class="w-full space-y-3"></div>
+        </aside>
+
+        <!-- CENTER CANVAS WORKSPACE -->
+        <main class="flex-1 bg-[#a0aab4] p-4 overflow-auto flex flex-col items-center justify-center relative">
+            <div id="slideCanvas" class="slide-canvas"></div>
+        </main>
+    </div>
+
+    <!-- FOOTER STATUS BAR -->
+    <footer class="bg-slate-200 border-t border-slate-300 px-3 py-1 flex justify-between items-center text-[11px] text-slate-600">
+        <div class="flex items-center gap-4">
+            <span id="currentSlideStatus">Slide 1 of 1</span>
+            <span>PowerPoint 365 Pro</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-green-600 font-medium"><i class="fas fa-cloud"></i> Tự động lưu</span>
+            <span>100%</span>
+        </div>
+    </footer>
+
+    <!-- FILE MENU BACKSTAGE MODAL -->
+    <div id="fileMenuModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex">
+        <div class="w-72 bg-office-red text-white flex flex-col p-5 shadow-2xl">
+            <div class="flex items-center gap-3 mb-8 px-2">
+                <span class="font-bold text-3xl bg-office-darkred px-3 py-1 rounded shadow">P</span>
+                <div>
+                    <div class="font-bold text-base">Thông tin Tệp</div>
+                    <div class="text-[11px] text-red-200">Microsoft PowerPoint 365</div>
+                </div>
+            </div>
+            <nav class="flex-1 space-y-1.5 text-sm">
+                <button onclick="closeFileMenuModal(); addNewSlide();" class="w-full text-left px-3 py-2.5 rounded hover:bg-office-darkred flex items-center gap-3 font-medium"><i class="fas fa-file-circle-plus"></i> Tạo slide mới</button>
+                <button onclick="closeFileMenuModal(); savePresentation(); alert('Đã lưu bài thuyết trình vào trình duyệt!');" class="w-full text-left px-3 py-2.5 rounded hover:bg-office-darkred flex items-center gap-3 font-medium"><i class="fas fa-floppy-disk"></i> Lưu bài thuyết trình</button>
+                <button onclick="closeFileMenuModal(); resetDataForce();" class="w-full text-left px-3 py-2.5 rounded bg-red-900/60 hover:bg-red-900 flex items-center gap-3 font-medium text-red-100 mt-6"><i class="fas fa-rotate"></i> Khôi phục cài đặt gốc (Reset)</button>
+            </nav>
+            <button onclick="closeFileMenuModal()" class="mt-auto py-2 border border-white/30 rounded text-xs hover:bg-white/10 font-semibold">Quay lại soạn thảo</button>
+        </div>
+        <div class="flex-1" onclick="closeFileMenuModal()"></div>
+    </div>
+
+    <!-- AUTHENTICATION MODAL -->
+    <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 space-y-4 border border-slate-200">
+            <div class="flex border-b pb-2 justify-between items-center">
+                <div class="flex gap-4">
+                    <button onclick="switchAuthTab('login')" id="tabLoginBtn" class="font-bold text-sm text-office-red border-b-2 border-office-red pb-1">Đăng nhập</button>
+                    <button onclick="switchAuthTab('register')" id="tabRegisterBtn" class="font-semibold text-sm text-slate-500 hover:text-office-red pb-1">Đăng ký mới</button>
+                </div>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div id="fullNameGroup" class="hidden">
+                    <label class="block mb-1 text-[11px] font-semibold text-slate-600">Họ và tên</label>
+                    <input type="text" id="regFullName" placeholder="Nguyễn Văn A" class="w-full border p-2 rounded text-xs outline-none focus:border-office-red">
+                </div>
+                <div>
+                    <label class="block mb-1 text-[11px] font-semibold text-slate-600">Email tài khoản</label>
+                    <input type="email" id="authEmail" placeholder="user@powerpoint365.com" class="w-full border p-2 rounded text-xs outline-none focus:border-office-red">
+                </div>
+                <div>
+                    <label class="block mb-1 text-[11px] font-semibold text-slate-600">Mật khẩu</label>
+                    <input type="password" id="authPass" placeholder="••••••••" class="w-full border p-2 rounded text-xs outline-none focus:border-office-red">
+                </div>
+            </div>
+            <div class="pt-2">
+                <button onclick="handleAuthSubmit()" id="authSubmitBtn" class="w-full py-2 bg-office-red text-white rounded font-bold hover:bg-office-darkorange shadow transition">
+                    Đăng nhập
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN SLIDE SHOW OVERLAY -->
+    <div id="slideShowOverlay" class="hidden fixed inset-0 z-50 bg-black flex items-center justify-center select-none" onclick="nextSlideShow()">
+        <div id="slideShowContent" class="w-full h-full flex flex-col items-center justify-center text-center relative p-12"></div>
+        <button onclick="event.stopPropagation(); stopSlideShow();" class="absolute top-4 right-4 text-white bg-black/50 px-3 py-1 rounded border border-white/30 text-xs">✕ Thoát (ESC)</button>
+    </div>
+
+    <!-- JAVASCRIPT ENGINE -->
+    <script>
+        function createInitialSlides() {
+            return [
+                {
+                    id: 1,
+                    bgColor: '#ffffff',
+                    transition: 'flip',
+                    elements: [
+                        { id: 'title-1', left: 130, top: 160, width: 600, bgColor: 'transparent', content: '<div class="font-semibold text-4xl text-center text-black" contenteditable="true">Nhấp để thêm tiêu đề</div>' },
+                        { id: 'subtitle-1', left: 180, top: 270, width: 500, bgColor: 'transparent', content: '<div class="font-normal text-xl text-center text-gray-500" contenteditable="true">Nhấp để thêm phụ đề bài thuyết trình</div>' }
+                    ]
+                }
+            ];
+        }
+
+        let currentUser = null;
+        let currentAuthMode = 'login';
+        let slides = createInitialSlides();
+        let currentSlideIndex = 0;
+        let activeDrag = null;
+        let selectedElementIndex = null;
+        let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+
+        function getStorageKey() {
+            return currentUser ? `ppt_user_${currentUser.email}` : 'ppt_guest_data';
+        }
+
+        function initApp() {
+            try {
+                const savedUser = localStorage.getItem('ppt_active_user');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserUI();
+                }
+                const savedData = localStorage.getItem(getStorageKey());
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    if (Array.isArray(parsed) && parsed.length > 0) slides = parsed;
+                }
+            } catch(e) {
+                slides = createInitialSlides();
+            }
+
+            renderThumbnails();
+            renderCanvas();
+
+            window.addEventListener('mousemove', (e) => {
+                if (!activeDrag) return;
+                let dx = e.clientX - startX;
+                let dy = e.clientY - startY;
+
+                let canvas = document.getElementById('slideCanvas');
+                let newLeft = Math.max(0, Math.min(canvas.clientWidth - 50, initialLeft + dx));
+                let newTop = Math.max(0, Math.min(canvas.clientHeight - 30, initialTop + dy));
+
+                activeDrag.element.style.left = newLeft + 'px';
+                activeDrag.element.style.top = newTop + 'px';
+                activeDrag.item.left = newLeft;
+                activeDrag.item.top = newTop;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (activeDrag) {
+                    activeDrag = null;
+                    savePresentation();
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'F5') { e.preventDefault(); startSlideShow(); }
+                else if (e.key === 'Escape') { stopSlideShow(); }
+            });
+        }
+
+        window.onload = initApp;
+
+        // FILE MENU MODAL
+        function openFileMenuModal() { document.getElementById('fileMenuModal').classList.remove('hidden'); }
+        function closeFileMenuModal() { document.getElementById('fileMenuModal').classList.add('hidden'); }
+
+        // RESET FUNCTION
+        function resetDataForce() {
+            if (confirm('Bạn có chắc chắn muốn khôi phục cài đặt gốc và làm mới toàn bộ bài thuyết trình?')) {
+                localStorage.removeItem(getStorageKey());
+                slides = createInitialSlides();
+                currentSlideIndex = 0;
+                renderThumbnails();
+                renderCanvas();
+                alert('Đã khôi phục cài đặt gốc thành công!');
+            }
+        }
+
+        // AUTHENTICATION
+        function openAuthModal(mode = 'login') {
+            switchAuthTab(mode);
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function switchAuthTab(mode) {
+            currentAuthMode = mode;
+            const tabLogin = document.getElementById('tabLoginBtn');
+            const tabReg = document.getElementById('tabRegisterBtn');
+            const nameGrp = document.getElementById('fullNameGroup');
+            const submitBtn = document.getElementById('authSubmitBtn');
+
+            if (mode === 'login') {
+                tabLogin.className = "font-bold text-sm text-office-red border-b-2 border-office-red pb-1";
+                tabReg.className = "font-semibold text-sm text-slate-500 hover:text-office-red pb-1";
+                nameGrp.classList.add('hidden');
+                submitBtn.innerText = "Đăng nhập";
+            } else {
+                tabReg.className = "font-bold text-sm text-office-red border-b-2 border-office-red pb-1";
+                tabLogin.className = "font-semibold text-sm text-slate-500 hover:text-office-red pb-1";
+                nameGrp.classList.remove('hidden');
+                submitBtn.innerText = "Tạo tài khoản Đăng ký";
+            }
+        }
+
+        function handleAuthSubmit() {
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPass').value.trim();
+            const fullName = document.getElementById('regFullName').value.trim();
+
+            if (!email || !pass) return alert('Vui lòng nhập Email và Mật khẩu!');
+
+            if (currentAuthMode === 'register') {
+                if (!fullName) return alert('Vui lòng nhập Họ và tên!');
+                const userObj = { name: fullName, email: email, pass: pass };
+                localStorage.setItem(`ppt_reg_${email}`, JSON.stringify(userObj));
+                currentUser = userObj;
+                alert(`Đăng ký tài khoản thành công! Xin chào ${fullName}`);
+            } else {
+                const registered = localStorage.getItem(`ppt_reg_${email}`);
+                if (registered) currentUser = JSON.parse(registered);
+                else currentUser = { name: email.split('@')[0], email: email };
+                alert(`Đăng nhập thành công!`);
+            }
+
+            localStorage.setItem('ppt_active_user', JSON.stringify(currentUser));
+            updateUserUI();
+            closeAuthModal();
+            initApp();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('ppt_active_user');
+            updateUserUI();
+            initApp();
+            alert('Đã đăng xuất tài khoản!');
+        }
+
+        function updateUserUI() {
+            const guestGrp = document.getElementById('guestAuthGroup');
+            const userGrp = document.getElementById('userProfileGroup');
+            const nameTxt = document.getElementById('userNameText');
+
+            if (currentUser) {
+                guestGrp.classList.add('hidden');
+                userGrp.classList.remove('hidden');
+                nameTxt.innerText = currentUser.name || currentUser.email.split('@')[0];
+            } else {
+                guestGrp.classList.remove('hidden');
+                userGrp.classList.add('hidden');
+            }
+        }
+
+        // SLIDE ENGINE
+        function renderThumbnails() {
+            const list = document.getElementById('slideThumbnailList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            slides.forEach((slide, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = `slide-thumb flex flex-col justify-between p-1 text-[10px] ${idx === currentSlideIndex ? 'active' : ''}`;
+                thumb.onclick = () => { currentSlideIndex = idx; renderThumbnails(); renderCanvas(); };
+                
+                thumb.innerHTML = `
+                    <div class="font-bold text-slate-500">${idx + 1}</div>
+                    <div class="text-center font-medium truncate text-slate-700">Slide ${idx + 1}</div>
+                `;
+                list.appendChild(thumb);
+            });
+
+            document.getElementById('currentSlideStatus').innerText = `Slide ${currentSlideIndex + 1} of ${slides.length}`;
+        }
+
+        function renderCanvas() {
+            const canvas = document.getElementById('slideCanvas');
+            if (!canvas) return;
+
+            if (!slides[currentSlideIndex]) currentSlideIndex = 0;
+            const slide = slides[currentSlideIndex];
+
+            canvas.style.backgroundColor = slide.bgColor || '#ffffff';
+            canvas.innerHTML = '';
+
+            slide.elements.forEach((item, index) => {
+                const box = document.createElement('div');
+                box.className = 'ppt-box';
+                box.style.left = item.left + 'px';
+                box.style.top = item.top + 'px';
+                box.style.backgroundColor = item.bgColor || 'transparent';
+                if (item.width) box.style.width = item.width + 'px';
+
+                box.onclick = () => {
+                    selectedElementIndex = index;
+                    document.querySelectorAll('.ppt-box').forEach(b => b.classList.remove('selected'));
+                    box.classList.add('selected');
+                    if (item.bgColor && item.bgColor !== 'transparent') {
+                        document.getElementById('boxBgColorPicker').value = item.bgColor;
+                    }
+                };
+
+                // Thanh kéo thả chuyên dụng phía trên mỗi hộp văn bản
+                const handle = document.createElement('div');
+                handle.className = 'drag-handle';
+                handle.innerHTML = `<span><i class="fas fa-arrows-up-down-left-right"></i> Di chuyển</span><span>✕</span>`;
+
+                handle.onmousedown = (e) => {
+                    e.stopPropagation();
+                    activeDrag = { item, element: box };
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    initialLeft = item.left;
+                    initialTop = item.top;
+                };
+
+                // Vùng nội dung gõ chữ độc lập (có contenteditable)
+                const content = document.createElement('div');
+                content.className = 'box-content';
+                content.innerHTML = item.content;
+
+                const editableEl = content.firstElementChild || content;
+                editableEl.setAttribute('contenteditable', 'true');
+
+                editableEl.oninput = () => {
+                    item.content = content.innerHTML;
+                    savePresentation();
+                };
+
+                box.appendChild(handle);
+                box.appendChild(content);
+                canvas.appendChild(box);
+            });
+        }
+
+        function changeSelectedBoxBg(color) {
+            if (selectedElementIndex !== null && slides[currentSlideIndex].elements[selectedElementIndex]) {
+                slides[currentSlideIndex].elements[selectedElementIndex].bgColor = color;
+                renderCanvas();
+                savePresentation();
+            } else {
+                alert('Vui lòng nhấp chọn một Hộp văn bản trên slide trước khi đổi màu nền!');
+            }
+        }
+
+        function addNewSlide() {
+            slides.push({
+                id: Date.now(),
+                bgColor: '#ffffff',
+                transition: 'flip',
+                elements: [
+                    { id: 'el-' + Date.now(), left: 130, top: 100, width: 600, bgColor: 'transparent', content: '<div class="font-semibold text-4xl text-center text-black">Nhấp để thêm tiêu đề</div>' },
+                    { id: 'el-' + (Date.now()+1), left: 180, top: 220, width: 500, bgColor: 'transparent', content: '<div class="font-normal text-xl text-center text-gray-500">Nhấp để thêm nội dung</div>' }
+                ]
+            });
+            currentSlideIndex = slides.length - 1;
+            renderThumbnails();
+            renderCanvas();
+            savePresentation();
+        }
+
+        function duplicateSlide() {
+            const copy = JSON.parse(JSON.stringify(slides[currentSlideIndex]));
+            copy.id = Date.now();
+            slides.splice(currentSlideIndex + 1, 0, copy);
+            currentSlideIndex++;
+            renderThumbnails();
+            renderCanvas();
+            savePresentation();
+        }
+
+        function deleteCurrentSlide() {
+            if (slides.length <= 1) return alert('Bài trình chiếu phải giữ lại ít nhất 1 Slide!');
+            slides.splice(currentSlideIndex, 1);
+            currentSlideIndex = Math.max(0, currentSlideIndex - 1);
+            renderThumbnails();
+            renderCanvas();
+            savePresentation();
+        }
+
+        function addTextBox() {
+            slides[currentSlideIndex].elements.push({
+                id: 'el-' + Date.now(),
+                left: 250,
+                top: 180,
+                width: 300,
+                bgColor: 'transparent',
+                content: '<div class="font-normal text-lg text-black">Nhập văn bản mới...</div>'
+            });
+            renderCanvas();
+            savePresentation();
+        }
+
+        function addImage() {
+            const url = prompt('Nhập đường dẫn URL hình ảnh:', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=500');
+            if (url) {
+                slides[currentSlideIndex].elements.push({
+                    id: 'el-' + Date.now(),
+                    left: 230,
+                    top: 150,
+                    bgColor: 'transparent',
+                    content: `<img src="${url}" class="w-72 rounded shadow border pointer-events-none">`
+                });
+                renderCanvas();
+                savePresentation();
+            }
+        }
+
+        function addShape(type) {
+            let shapeHtml = type === 'rect' 
+                ? '<div class="w-44 h-28 bg-office-red rounded flex items-center justify-center text-white font-bold shadow">Hình chữ nhật</div>'
+                : '<div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow">Hình tròn</div>';
+
+            slides[currentSlideIndex].elements.push({
+                id: 'el-' + Date.now(),
+                left: 280,
+                top: 160,
+                bgColor: 'transparent',
+                content: shapeHtml
+            });
+            renderCanvas();
+            savePresentation();
+        }
+
+        function applyTheme(th) {
+            const s = slides[currentSlideIndex];
+            if (th === 'white') s.bgColor = '#ffffff';
+            else if (th === 'dark') s.bgColor = '#0f172a';
+            else if (th === 'blue') s.bgColor = '#1e3a8a';
+            renderCanvas();
+            savePresentation();
+        }
+
+        function setTransition(trans) {
+            slides[currentSlideIndex].transition = trans;
+            savePresentation();
+            alert(`Đã đặt hiệu ứng chuyển trang: ${trans.toUpperCase()}`);
+        }
+
+        function execFormat(cmd, val = null) {
+            document.execCommand(cmd, false, val);
+            savePresentation();
+        }
+
+        function startSlideShow() {
+            document.getElementById('slideShowOverlay').classList.remove('hidden');
+            renderSlideShowContent();
+        }
+
+        function renderSlideShowContent() {
+            const container = document.getElementById('slideShowContent');
+            const slide = slides[currentSlideIndex];
+            container.style.backgroundColor = slide.bgColor || '#ffffff';
+            container.innerHTML = '';
+
+            const trans = slide.transition || 'fade';
+            container.className = "w-full h-full flex flex-col items-center justify-center text-center relative p-12 ";
+            if (trans === 'fade') container.classList.add('anim-fade');
+            else if (trans === 'push') container.classList.add('anim-push');
+            else if (trans === 'zoom') container.classList.add('anim-zoom');
+            else if (trans === 'flip') container.classList.add('anim-flip');
+
+            slide.elements.forEach(item => {
+                const el = document.createElement('div');
+                el.style.position = 'absolute';
+                el.style.left = (item.left * 1.1) + 'px';
+                el.style.top = (item.top * 1.1) + 'px';
+                el.style.backgroundColor = item.bgColor || 'transparent';
+                el.innerHTML = item.content;
+                el.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                container.appendChild(el);
+            });
+        }
+
+        function nextSlideShow() {
+            if (currentSlideIndex < slides.length - 1) {
+                currentSlideIndex++;
+                renderSlideShowContent();
+            } else {
+                stopSlideShow();
+            }
+        }
+
+        function stopSlideShow() {
+            document.getElementById('slideShowOverlay').classList.add('hidden');
+            renderCanvas();
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('bg-white', 'border-t-2', 'border-office-red'));
+            
+            const panel = document.getElementById(`panel-${name}`);
+            const btn = document.getElementById(`tab-${name}`);
+            if (panel) panel.classList.remove('hidden');
+            if (btn) btn.classList.add('bg-white', 'border-t-2', 'border-office-red');
+        }
+
+        function savePresentation() {
+            localStorage.setItem(getStorageKey(), JSON.stringify(slides));
+        }
+
+        function renamePresentation() {
+            const title = prompt('Nhập tên bài thuyết trình:', 'Presentation1 - Microsoft PowerPoint');
+            if (title) document.getElementById('docTitleDisplay').innerText = title;
+        }
+    </script>
+</body>
+</html>
